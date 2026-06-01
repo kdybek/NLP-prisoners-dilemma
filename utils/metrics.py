@@ -1,13 +1,16 @@
-from typing import Optional
+from typing import Optional, List, Dict
 from types import GameHistory, Action
 
 
-def player1_nice_factor(history: GameHistory) -> float:
+def player1_nice_factor(history: GameHistory) -> Optional[float]:
     for action1, action2 in history:
         if action1 == Action.DEFECT:
             return 0.0
         elif action2 == Action.DEFECT:
             return 1.0
+
+    if len(history) == 0:
+        return None
 
     return 1.0
 
@@ -107,5 +110,44 @@ def player1_emulative_factor(history: GameHistory) -> Optional[float]:
     return emulations / (N - 1)
 
 
+def get_player1_metrics(histories: List[GameHistory]) -> Dict[str, float]:
+    nice_factors = []
+    forgiving_factors = []
+    retaliatory_factors = []
+    troublemaking_factors = []
+    emulative_factors = []
 
+    for history in histories:
+        nice_factor = player1_nice_factor(history)
+        if nice_factor is not None:
+            nice_factors.append(nice_factor)
 
+        forgiving_factor = player1_forgiving_factor(history)
+        if forgiving_factor is not None:
+            forgiving_factors.append(forgiving_factor)
+
+        retaliatory_factor = player1_retaliatory_factor(history)
+        if retaliatory_factor is not None:
+            retaliatory_factors.append(retaliatory_factor)
+
+        troublemaking_factor = player1_troublemaking_factor(history)
+        if troublemaking_factor is not None:
+            troublemaking_factors.append(troublemaking_factor)
+
+        emulative_factor = player1_emulative_factor(history)
+        if emulative_factor is not None:
+            emulative_factors.append(emulative_factor)
+
+    nice_factor_avg = sum(nice_factors) / len(nice_factors) if nice_factors else 0.0
+    forgiving_factor_avg = sum(forgiving_factors) / len(forgiving_factors) if forgiving_factors else 0.0
+    retaliatory_factor_avg = sum(retaliatory_factors) / len(retaliatory_factors) if retaliatory_factors else 0.0
+    troublemaking_factor_avg = sum(troublemaking_factors) / len(troublemaking_factors) if troublemaking_factors else 0.0
+    emulative_factor_avg = sum(emulative_factors) / len(emulative_factors) if emulative_factors else 0.0
+
+    return {
+        "nice": nice_factor_avg,
+        "forgiving": forgiving_factor_avg,
+        "retaliatory": retaliatory_factor_avg,
+        "troublemaking": troublemaking_factor_avg,
+        "emulative": emulative_factor_avg
+    }
