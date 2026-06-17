@@ -14,10 +14,10 @@ class GameState:
     player_a_cooperations: int = 0
     player_b_cooperations: int = 0
     history: List[Tuple[str, str]] = field(default_factory=list)
-    
+
     def get_last_n_rounds(self, n: int = 5) -> List[Tuple[str, str]]:
         return self.history[-n:] if len(self.history) >= n else self.history
-    
+
     def get_round_payoff(self, action_a: str, action_b: str) -> Tuple[int, int]:
         payoffs = {
             ("Defect", "Defect"): (1, 1),
@@ -29,29 +29,29 @@ class GameState:
 
 
 class PrisonersDilemmaGame:
-    
+
     def __init__(self, max_rounds: int = 100):
         self.state = GameState(max_rounds=max_rounds)
         self.round_results: List[Dict] = []
-    
+
     def play_round(self, action_a: str, action_b: str) -> Dict:
         valid_actions = {"Cooperate", "Defect"}
         if action_a not in valid_actions or action_b not in valid_actions:
             logger.error(f"Invalid action: A={action_a}, B={action_b}")
             action_a, action_b = "Cooperate", "Cooperate"
-        
+
         payoff_a, payoff_b = self.state.get_round_payoff(action_a, action_b)
-        
+
         self.state.player_a_score += payoff_a
         self.state.player_b_score += payoff_b
-        
+
         if action_a == "Cooperate":
             self.state.player_a_cooperations += 1
         if action_b == "Cooperate":
             self.state.player_b_cooperations += 1
-        
+
         self.state.history.append((action_a, action_b))
-        
+
         result = {
             "round": self.state.round_number,
             "action_a": action_a,
@@ -61,16 +61,16 @@ class PrisonersDilemmaGame:
             "total_score_a": self.state.player_a_score,
             "total_score_b": self.state.player_b_score,
         }
-        
+
         self.round_results.append(result)
-        
+
         self.state.round_number += 1
-        
+
         return result
-    
+
     def is_finished(self) -> bool:
         return self.state.round_number > self.state.max_rounds
-    
+
     def get_game_summary(self) -> Dict:
         return {
             "total_rounds": len(self.round_results),
@@ -85,26 +85,28 @@ class PrisonersDilemmaGame:
 
 
 class GameTournament:
-    
+
     def __init__(self, num_games: int = 5, rounds_per_game: int = 100):
         self.num_games = num_games
         self.rounds_per_game = rounds_per_game
         self.games: List[PrisonersDilemmaGame] = []
         self.tournament_results: List[Dict] = []
-    
+
     def get_tournament_stats(self) -> Dict:
         if not self.tournament_results:
             return {}
-        
+
         total_score_a = sum(r["player_a_total_score"] for r in self.tournament_results)
         total_score_b = sum(r["player_b_total_score"] for r in self.tournament_results)
-        avg_cooperations_a = sum(r["player_a_cooperations"] for r in self.tournament_results) / len(self.tournament_results)
-        avg_cooperations_b = sum(r["player_b_cooperations"] for r in self.tournament_results) / len(self.tournament_results)
-        
+        avg_cooperations_a = sum(r["player_a_cooperations"]
+                                 for r in self.tournament_results) / len(self.tournament_results)
+        avg_cooperations_b = sum(r["player_b_cooperations"]
+                                 for r in self.tournament_results) / len(self.tournament_results)
+
         wins_a = sum(1 for r in self.tournament_results if r["winner"] == "A")
         wins_b = sum(1 for r in self.tournament_results if r["winner"] == "B")
         ties = sum(1 for r in self.tournament_results if r["winner"] == "Tie")
-        
+
         return {
             "total_games": len(self.tournament_results),
             "total_score_a": total_score_a,

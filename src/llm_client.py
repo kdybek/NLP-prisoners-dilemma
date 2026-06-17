@@ -16,7 +16,7 @@ class LLMResponse(BaseModel):
     reason: str
 
 
-class OllamaClient:    
+class OllamaClient:
     def __init__(self, base_url: str = "http://localhost:11434", model: str = "llama2"):
         self.base_url = base_url
         self.model = model
@@ -35,15 +35,16 @@ class OllamaClient:
 
         return False
 
-    
     def check_connection(self) -> bool:
         try:
             response = requests.get(f"{self.base_url}/api/tags", timeout=5)
             if response.status_code == 200:
-                available_models = [m['name'] for m in response.json().get('models', [])]
+                available_models = [m['name']
+                                    for m in response.json().get('models', [])]
                 logger.info(f"Available models: {available_models}")
                 if not self._resolve_model_name(available_models):
-                    logger.warning(f"Model {self.model} not found. Available: {available_models}")
+                    logger.warning(f"Model {self.model} not found. Available: {
+                                   available_models}")
                     return False
                 logger.info(f"Connected to Ollama with model: {self.model}")
                 return True
@@ -52,7 +53,7 @@ class OllamaClient:
             logger.error(f"Cannot connect to Ollama at {self.base_url}")
             logger.error("Make sure Ollama is running: ollama serve")
             return False
-    
+
     def generate_response(
         self,
         prompt: str,
@@ -60,7 +61,7 @@ class OllamaClient:
         top_p: float = 0.9,
         max_tokens: int = 500,
     ) -> str:
-        
+
         try:
             payload = {
                 "model": self.model,
@@ -70,16 +71,16 @@ class OllamaClient:
                 "num_predict": max_tokens,
                 "stream": False,
             }
-            
+
             response = requests.post(self.api_generate_url, json=payload, timeout=60)
-            
+
             if response.status_code == 200:
                 result = response.json()
                 return result.get("response", "").strip()
             else:
                 logger.error(f"API Error: {response.status_code}")
                 return ""
-                
+
         except requests.exceptions.Timeout:
             logger.error("Request timeout - model taking too long to respond")
             return ""
@@ -89,17 +90,17 @@ class OllamaClient:
         except Exception as e:
             logger.error(f"Error generating response: {e}")
             return ""
-    
+
     def parse_llm_response(self, response_text: str) -> Optional[LLMResponse]:
         try:
             # Try to find JSON in the response
             start_idx = response_text.find("{")
             end_idx = response_text.rfind("}") + 1
-            
+
             if start_idx != -1 and end_idx > start_idx:
                 json_str = response_text[start_idx:end_idx]
                 parsed = json.loads(json_str)
-                
+
                 if "action" in parsed and "reason" in parsed:
                     return LLMResponse(
                         action=parsed["action"].strip(),
@@ -107,9 +108,9 @@ class OllamaClient:
                     )
         except json.JSONDecodeError:
             logger.warning(f"Failed to parse JSON from response")
-        
+
         return None
-    
+
     def get_decision(
         self,
         full_prompt: str,
@@ -117,17 +118,17 @@ class OllamaClient:
         temperature: float = 0.7,
     ) -> Optional[LLMResponse]:
         logger.info(f"Requesting decision from {self.model} with {persona} persona")
-        
+
         response_text = self.generate_response(
             prompt=full_prompt,
             temperature=temperature,
             max_tokens=500
         )
-        
+
         parsed = self.parse_llm_response(response_text)
-        
+
         if not parsed:
             logger.error(f"Failed to parse response: {response_text}")
             return LLMResponse(action="Cooperate", reason="Unable to parse response")
-        
+
         return parsed
