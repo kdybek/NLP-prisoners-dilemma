@@ -27,7 +27,7 @@ class LLMPlayer:
         self.decision_history: list = []
     
     def build_prompt(self, game_state: Dict[str, Any]) -> str:
-        base_prompt = self.prompts.get("Contana_game_prompt", "")
+        base_prompt = self.prompts.get("Fontana_game_prompt", "")
         instruction_prompt = self.prompts.get("instruction_prompts", "")
         
         persona_prompts = self.prompts.get("persona_prompt", {})
