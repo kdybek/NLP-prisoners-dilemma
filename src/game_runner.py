@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 from src.game import PrisonersDilemmaGame, GameTournament
 from src.llm_client import OllamaClient
-from src.player import LLMPlayer, PlayerConfig
+from src.player import LLMPlayer, Player, RandomPlayer
 
 logging.basicConfig(
     level=logging.INFO,
@@ -24,31 +24,30 @@ class GameRunner:
         self,
         llm_model: str = "llama2",
         ollama_url: str = "http://localhost:11434",
-        output_dir: str = "./results"
+        output_dir: str = "./results",
+        prompt_file: str = "prompts.json",
     ):
         self.llm_client = OllamaClient(base_url=ollama_url, model=llm_model)
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        with open("prompts.json", "r") as f:
+        with open(prompt_file, "r") as f:
             self.prompts = json.load(f)
 
     def create_player(
         self,
-        name: str,
-        model: str,
-        company: str,
-        persona: str = "baseline",
-        temperature: float = 0.7
-    ) -> LLMPlayer:
-        config = PlayerConfig(
-            name=name,
-            model=model,
-            company=company,
-            persona=persona,
-            temperature=temperature
-        )
-        return LLMPlayer(config, self.llm_client, self.prompts)
+        config: Dict[str, Any],
+    ) -> Player:
+        if config["type"] == "random":
+            name = "Random Player"
+            defection_probability = config["defection_probability"]
+            return RandomPlayer(name=name, defection_probability=defection_probability)
+        elif config["type"] == "llm":
+            name = "LLM"
+            temperature = config["temperature"]
+            return LLMPlayer(name=name, temperature=temperature, llm_client=self.llm_client, prompts_dict=self.prompts)
+        else:
+            raise ValueError(f"Unknown player type: {config['type']}")
 
     def build_game_context(
         self,
@@ -58,8 +57,8 @@ class GameRunner:
         if len(game.state.history) == 0:
             return f"Current round: 1."
 
-        # Get last 5 rounds for context
-        last_rounds = min(5, len(game.state.history))
+        # Get last 10 rounds for context
+        last_rounds = min(10, len(game.state.history))
         context_lines = []
 
         for i, (action_a, action_b) in enumerate(game.state.history[-last_rounds:],
@@ -87,8 +86,8 @@ class GameRunner:
 
     def play_game(
         self,
-        player_a: LLMPlayer,
-        player_b: LLMPlayer,
+        player_a: Player,
+        player_b: Player,
         num_rounds: int = 100,
         verbose: bool = True
     ) -> Dict[str, Any]:
@@ -117,15 +116,13 @@ class GameRunner:
             action_a = decision_a.get("action", "Cooperate")
             action_b = decision_b.get("action", "Cooperate")
 
-            result = game.play_round(action_a, action_b)
+            game.play_round(action_a, action_b)
 
             if verbose and (round_num + 1) % 10 == 0:
                 logger.info(f"Round {round_num + 1}: A={action_a}, B={action_b} | "
                             f"Scores: A={game.state.player_a_score}, B={game.state.player_b_score}")
 
         summary = game.get_game_summary()
-        summary["player_a"] = player_a.config.name
-        summary["player_b"] = player_b.config.name
         summary["round_details"] = game.round_results
 
         return summary
@@ -145,8 +142,8 @@ class GameRunner:
 
         for player_a_config, player_b_config in matchups:
             logger.info(f"\n{'='*60}")
-            logger.info(f"Matchup: {player_a_config['name']} vs {
-                        player_b_config['name']}")
+            logger.info(f"Matchup: {player_a_config['type']} vs {
+                        player_b_config['type']}")
             logger.info(f"{'='*60}")
 
             matchup_results = {
@@ -158,10 +155,11 @@ class GameRunner:
             for game_num in range(num_games):
                 logger.info(f"\nGame {game_num + 1}/{num_games}")
 
-                player_a = self.create_player(**player_a_config)
-                player_b = self.create_player(**player_b_config)
+                player_a = self.create_player(player_a_config)
+                player_b = self.create_player(player_b_config)
 
-                result = self.play_game(player_a, player_b, num_rounds=num_rounds, verbose=verbose)
+                result = self.play_game(
+                    player_a, player_b, num_rounds=num_rounds, verbose=verbose)
                 matchup_results["games"].append(result)
 
             # Calculate matchup stats

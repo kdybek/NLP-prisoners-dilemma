@@ -1,12 +1,20 @@
 import json
 import logging
 from pathlib import Path
-from dotenv import load_dotenv
 import os
+from absl import app, flags
 
 from src.game_runner import GameRunner
 
-load_dotenv()
+
+FLAGS = flags.FLAGS
+OLLAMA_BASE_URL = "http://localhost:11434"
+flags.DEFINE_string("model", "llama2", "The model to use for the LLM player.")
+flags.DEFINE_integer("rounds", 100, "Number of rounds per game.")
+flags.DEFINE_integer("games", 10, "Number of games per matchup.")
+flags.DEFINE_string("output_dir", "./results", "Directory to save results.")
+flags.DEFINE_string("prompt_file", "prompts.json", "Path to the prompts JSON file.")
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,59 +23,41 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def main():
-    ollama_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
-    default_model = os.getenv("DEFAULT_MODEL", "llama2")
-    num_rounds = int(os.getenv("NUM_ROUNDS", "100"))
-    num_games = int(os.getenv("NUM_GAMES", "5"))
-    output_dir = os.getenv("OUTPUT_DIR", "./results")
+def main(_):
+    model = FLAGS.model
+    num_rounds = FLAGS.rounds
+    num_games = FLAGS.games
+    output_dir = FLAGS.output_dir
+    prompt_file = FLAGS.prompt_file
 
     logger.info("Starting Prisoner's Dilemma Assessment")
-    logger.info(f"Ollama URL: {ollama_url}")
-    logger.info(f"Default Model: {default_model}")
-
     runner = GameRunner(
-        llm_model=default_model,
-        ollama_url=ollama_url,
-        output_dir=output_dir
+        llm_model=model,
+        ollama_url=OLLAMA_BASE_URL,
+        output_dir=output_dir,
+        prompt_file=prompt_file
     )
 
     if not runner.llm_client.check_connection():
         logger.error("Cannot connect to Ollama. Make sure it's running:")
         logger.error("  ollama serve")
         logger.error("And pull a model:")
-        logger.error(f"  ollama pull {default_model}")
+        logger.error(f"  ollama pull {model}")
         return
 
-    player_configs = [
-        {
-            "name": "Baseline Player",
-            "model": default_model,
-            "company": "Test",
-            "persona": "baseline",
+    llm_config = {
+            "type": "llm",
             "temperature": 0.7
-        },
+    }
+
+    random_players = [
         {
-            "name": "Compassionate Player",
-            "model": default_model,
-            "company": "Test",
-            "persona": "compassionate",
-            "temperature": 0.7
-        },
-        {
-            "name": "Narcissistic Player",
-            "model": default_model,
-            "company": "Test",
-            "persona": "narcisstic",
-            "temperature": 0.8
-        }
+            "type": "random",
+            "defection_probability": prob
+        } for prob in [0.5]
     ]
 
-    matchups = [
-        (player_configs[0], player_configs[1]),  # Baseline vs Compassionate
-        (player_configs[0], player_configs[2]),  # Baseline vs Narcissistic
-        (player_configs[1], player_configs[2]),  # Compassionate vs Narcissistic
-    ]
+    matchups = [(llm_config, random_config) for random_config in random_players]
 
     logger.info(f"Running tournament with {len(matchups)} matchups, {
                 num_games} games per matchup")
@@ -77,6 +67,10 @@ def main():
         num_rounds=num_rounds,
         verbose=True
     )
+    results.update({
+        "model": model,
+        "prompt_file": prompt_file
+    })
 
     results_file = runner.save_results(results)
 
@@ -85,11 +79,9 @@ def main():
     logger.info("="*60)
 
     for i, matchup in enumerate(results["matchups"], 1):
-        player_a_name = matchup["player_a"]["name"]
-        player_b_name = matchup["player_b"]["name"]
         stats = matchup["stats"]
 
-        logger.info(f"\nMatchup {i}: {player_a_name} vs {player_b_name}")
+        logger.info(f"\nMatchup {i}")
         logger.info(f"  A Total Score: {stats['total_score_a']}")
         logger.info(f"  B Total Score: {stats['total_score_b']}")
         logger.info(f"  A Avg Score/Game: {stats['avg_score_per_game_a']:.2f}")
@@ -103,4 +95,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    app.run(main)

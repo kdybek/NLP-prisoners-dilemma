@@ -6,6 +6,7 @@ import json
 import logging
 from typing import Optional, Dict, Any
 from pydantic import BaseModel
+import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -92,32 +93,23 @@ class OllamaClient:
             return ""
 
     def parse_llm_response(self, response_text: str) -> Optional[LLMResponse]:
-        try:
-            # Try to find JSON in the response
-            start_idx = response_text.find("{")
-            end_idx = response_text.rfind("}") + 1
-
-            if start_idx != -1 and end_idx > start_idx:
-                json_str = response_text[start_idx:end_idx]
-                parsed = json.loads(json_str)
-
-                if "action" in parsed and "reason" in parsed:
-                    return LLMResponse(
-                        action=parsed["action"].strip(),
-                        reason=parsed["reason"].strip()
-                    )
-        except json.JSONDecodeError:
-            logger.warning(f"Failed to parse JSON from response")
+        if response_text:
+            resp_clean = re.sub(r'[^a-zA-Z]', '', response_text)
+            if resp_clean == "Cooperate":
+                return LLMResponse(action="Cooperate", reason="No reason provided")
+            elif resp_clean == "Defect":
+                return LLMResponse(action="Defect", reason="No reason provided")
+            else:
+                logger.warning(f"Unexpected response: {response_text}")
 
         return None
 
     def get_decision(
         self,
         full_prompt: str,
-        persona: str = "baseline",
         temperature: float = 0.7,
     ) -> Optional[LLMResponse]:
-        logger.info(f"Requesting decision from {self.model} with {persona} persona")
+        logger.info(f"Requesting decision from {self.model}")
 
         response_text = self.generate_response(
             prompt=full_prompt,
