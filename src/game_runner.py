@@ -134,6 +134,7 @@ class GameRunner:
         self,
         matchups: list,
         num_games: int = 5,
+        num_rounds: int = 100,
         verbose: bool = True
     ) -> Dict[str, Any]:
         tournament_results = {
@@ -160,7 +161,7 @@ class GameRunner:
                 player_a = self.create_player(**player_a_config)
                 player_b = self.create_player(**player_b_config)
 
-                result = self.play_game(player_a, player_b, verbose=verbose)
+                result = self.play_game(player_a, player_b, num_rounds=num_rounds, verbose=verbose)
                 matchup_results["games"].append(result)
 
             # Calculate matchup stats

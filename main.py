@@ -74,6 +74,7 @@ def main():
     results = runner.run_tournament(
         matchups=matchups,
         num_games=num_games,
+        num_rounds=num_rounds,
         verbose=True
     )
 
