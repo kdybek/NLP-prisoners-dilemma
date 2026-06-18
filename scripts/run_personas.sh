@@ -19,3 +19,4 @@ for model in "${models[@]}"; do
       --prompt_file "$prompt_file"
   done
 done
+
