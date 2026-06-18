@@ -12,3 +12,4 @@ for model in "${models[@]}"; do
     --model "$model" \
     --prompt_file "prompts/baseline.json"
 done
+
