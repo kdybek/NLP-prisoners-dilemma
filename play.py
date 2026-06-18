@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 import os
 from absl import app, flags
+import numpy as np
 
 from src.game_runner import GameRunner
 
@@ -11,7 +12,7 @@ FLAGS = flags.FLAGS
 OLLAMA_BASE_URL = "http://localhost:11434"
 flags.DEFINE_string("model", "llama2", "The model to use for the LLM player.")
 flags.DEFINE_integer("rounds", 100, "Number of rounds per game.")
-flags.DEFINE_integer("games", 10, "Number of games per matchup.")
+flags.DEFINE_integer("games", 20, "Number of games against random opponents of differing hostility.")
 flags.DEFINE_string("output_dir", "./results", "Directory to save results.")
 flags.DEFINE_string("prompt_file", "prompts.json", "Path to the prompts JSON file.")
 
@@ -54,7 +55,7 @@ def main(_):
         {
             "type": "random",
             "defection_probability": prob
-        } for prob in [0.5]
+        } for prob in np.linspace(0, 1, num=num_games)
     ]
 
     matchups = [(llm_config, random_config) for random_config in random_players]
@@ -63,7 +64,7 @@ def main(_):
                 num_games} games per matchup")
     results = runner.run_tournament(
         matchups=matchups,
-        num_games=num_games,
+        num_games=1,
         num_rounds=num_rounds,
         verbose=True
     )

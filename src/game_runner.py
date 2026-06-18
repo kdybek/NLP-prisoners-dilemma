@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 class GameRunner:
     def __init__(
         self,
-        llm_model: str = "llama2",
-        ollama_url: str = "http://localhost:11434",
-        output_dir: str = "./results",
-        prompt_file: str = "prompts.json",
+        llm_model: str,
+        ollama_url: str,
+        output_dir: str,
+        prompt_file: str,
     ):
         self.llm_client = OllamaClient(base_url=ollama_url, model=llm_model)
         self.output_dir = Path(output_dir)
@@ -55,7 +55,7 @@ class GameRunner:
         round_num: int
     ) -> str:
         if len(game.state.history) == 0:
-            return f"Current round: 1."
+            return "Current round: 1."
 
         # Get last 10 rounds for context
         last_rounds = min(10, len(game.state.history))
@@ -88,7 +88,7 @@ class GameRunner:
         self,
         player_a: Player,
         player_b: Player,
-        num_rounds: int = 100,
+        num_rounds: int,
         verbose: bool = True
     ) -> Dict[str, Any]:
         game = PrisonersDilemmaGame(max_rounds=num_rounds)
@@ -130,8 +130,8 @@ class GameRunner:
     def run_tournament(
         self,
         matchups: list,
-        num_games: int = 5,
-        num_rounds: int = 100,
+        num_games: int,
+        num_rounds: int,
         verbose: bool = True
     ) -> Dict[str, Any]:
         tournament_results = {

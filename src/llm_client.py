@@ -71,6 +71,7 @@ class OllamaClient:
                 "top_p": top_p,
                 "num_predict": max_tokens,
                 "stream": False,
+                "think": False,
             }
 
             response = requests.post(self.api_generate_url, json=payload, timeout=60)
@@ -94,7 +95,8 @@ class OllamaClient:
 
     def parse_llm_response(self, response_text: str) -> Optional[LLMResponse]:
         if response_text:
-            resp_clean = re.sub(r'[^a-zA-Z]', '', response_text)
+            resp_clean = re.sub(r'[^a-zA-Z\s]', '', response_text)
+            resp_clean = resp_clean.split()[0] if resp_clean.split() else ""
             if resp_clean == "Cooperate":
                 return LLMResponse(action="Cooperate", reason="No reason provided")
             elif resp_clean == "Defect":
@@ -109,18 +111,21 @@ class OllamaClient:
         full_prompt: str,
         temperature: float = 0.7,
     ) -> Optional[LLMResponse]:
-        logger.info(f"Requesting decision from {self.model}")
+        MAX_RETRIES = 3
+        for attempt in range(MAX_RETRIES):
+            logger.info(f"Requesting decision from {self.model}")
 
-        response_text = self.generate_response(
-            prompt=full_prompt,
-            temperature=temperature,
-            max_tokens=500
-        )
+            response_text = self.generate_response(
+                prompt=full_prompt,
+                temperature=temperature,
+                max_tokens=500
+            )
+            parsed = self.parse_llm_response(response_text)
+            if parsed is not None:
+                break
 
-        parsed = self.parse_llm_response(response_text)
-
-        if not parsed:
-            logger.error(f"Failed to parse response: {response_text}")
-            return LLMResponse(action="Cooperate", reason="Unable to parse response")
+        if parsed is None:
+            logger.error("Your model seems to be too stupid. Failed to get a valid response after multiple attempts.")
+            raise Exception("Failed to get a valid response from the model after multiple attempts.")
 
         return parsed

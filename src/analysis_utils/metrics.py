@@ -1,5 +1,5 @@
 from typing import Optional, List, Dict
-from utils.types import GameHistory, Action
+from src.analysis_utils.types import GameHistory, Action
 
 
 def player1_nice_factor(history: GameHistory) -> Optional[float]:
