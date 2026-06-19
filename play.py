@@ -4,6 +4,7 @@ from pathlib import Path
 import os
 from absl import app, flags
 import numpy as np
+import random
 
 from src.game_runner import GameRunner
 
@@ -12,9 +13,10 @@ FLAGS = flags.FLAGS
 OLLAMA_BASE_URL = "http://localhost:11434"
 flags.DEFINE_string("model", "llama2", "The model to use for the LLM player.")
 flags.DEFINE_integer("rounds", 100, "Number of rounds per game.")
-flags.DEFINE_integer("games", 20, "Number of games against random opponents of differing hostility.")
+flags.DEFINE_integer("games", 30, "Number of games against random opponents of differing hostility.")
 flags.DEFINE_string("output_dir", "./results", "Directory to save results.")
 flags.DEFINE_string("prompt_file", "prompts.json", "Path to the prompts JSON file.")
+flags.DEFINE_integer("prompt_score_multiplier", 1, "Multiplier for the score in the prompt context.")
 
 
 logging.basicConfig(
@@ -30,6 +32,9 @@ def main(_):
     num_games = FLAGS.games
     output_dir = FLAGS.output_dir
     prompt_file = FLAGS.prompt_file
+    prompt_score_multiplier = FLAGS.prompt_score_multiplier
+
+    random.seed(42)
 
     logger.info("Starting Prisoner's Dilemma Assessment")
     runner = GameRunner(
@@ -66,7 +71,8 @@ def main(_):
         matchups=matchups,
         num_games=1,
         num_rounds=num_rounds,
-        verbose=True
+        verbose=True,
+        prompt_score_multiplier=prompt_score_multiplier
     )
     results.update({
         "model": model,

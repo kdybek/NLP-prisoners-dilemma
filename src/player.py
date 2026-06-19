@@ -73,28 +73,27 @@ class LLMPlayer(Player):
         self.llm_client = llm_client
         self.prompts = prompts_dict
 
-    def build_prompt(self, game_state: Dict[str, Any]) -> str:
+    def build_prompts(self, game_state: Dict[str, Any]) -> str:
         base_prompt = self.prompts["game_prompt"]
-        instruction_prompt = self.prompts["instruction_prompts"]
+        instruction_prompt = self.prompts["instruction_prompt"]
         persona_prompt = self.prompts["persona_prompt"]
 
         context = game_state["context"]
 
-        return (
-            f"{persona_prompt}"
-            f"{base_prompt}"
-            f"{context}"
-            f"{instruction_prompt}"
-        )
+        system_prompt = f"{persona_prompt}\n{base_prompt}"
+        prompt = f"{context}\n{instruction_prompt}"
+
+        return system_prompt, prompt
 
     def _get_decision(
         self,
         game_state: Dict[str, Any]
     ) -> Dict[str, str]:
-        prompt = self.build_prompt(game_state)
+        system_prompt, prompt = self.build_prompts(game_state)
 
         response = self.llm_client.get_decision(
-            full_prompt=prompt,
+            prompt=prompt,
+            system_prompt=system_prompt,
             temperature=self.temperature,
         )
 

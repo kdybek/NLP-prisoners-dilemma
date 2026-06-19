@@ -8,6 +8,8 @@ from typing import Optional, Dict, Any
 from pydantic import BaseModel
 import re
 
+SEED = 0
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -18,7 +20,7 @@ class LLMResponse(BaseModel):
 
 
 class OllamaClient:
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "llama2"):
+    def __init__(self, base_url: str, model: str):
         self.base_url = base_url
         self.model = model
         self.api_generate_url = f"{base_url}/api/generate"
@@ -58,21 +60,28 @@ class OllamaClient:
     def generate_response(
         self,
         prompt: str,
+        system_prompt: str,
         temperature: float = 0.7,
         top_p: float = 0.9,
-        max_tokens: int = 500,
+        max_tokens: int = 20,
     ) -> str:
+        global SEED
 
         try:
             payload = {
                 "model": self.model,
+                "system": system_prompt,
                 "prompt": prompt,
-                "temperature": temperature,
-                "top_p": top_p,
-                "num_predict": max_tokens,
                 "stream": False,
                 "think": False,
+                "options": {
+                    "temperature": temperature,
+                    "top_p": top_p,
+                    "num_predict": max_tokens,
+                    "seed": SEED,
+                }
             }
+            SEED += 1
 
             response = requests.post(self.api_generate_url, json=payload, timeout=60)
 
@@ -108,17 +117,19 @@ class OllamaClient:
 
     def get_decision(
         self,
-        full_prompt: str,
-        temperature: float = 0.7,
+        prompt: str,
+        system_prompt: str,
+        temperature: float,
     ) -> Optional[LLMResponse]:
         MAX_RETRIES = 3
         for attempt in range(MAX_RETRIES):
             logger.info(f"Requesting decision from {self.model}")
 
             response_text = self.generate_response(
-                prompt=full_prompt,
+                prompt=prompt,
+                system_prompt=system_prompt,
                 temperature=temperature,
-                max_tokens=500
+                max_tokens=20,
             )
             parsed = self.parse_llm_response(response_text)
             if parsed is not None:
