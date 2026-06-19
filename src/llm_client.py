@@ -63,7 +63,7 @@ class OllamaClient:
         system_prompt: str,
         temperature: float = 0.7,
         top_p: float = 0.9,
-        max_tokens: int = 20,
+        max_tokens: int = 50,
     ) -> str:
         global SEED
 
@@ -140,7 +140,7 @@ class OllamaClient:
                 prompt=prompt,
                 system_prompt=system_prompt,
                 temperature=temperature,
-                max_tokens=20,
+                max_tokens=50,
             )
             parsed = self.parse_llm_response(response_text)
             if parsed is not None:
