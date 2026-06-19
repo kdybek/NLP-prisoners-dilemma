@@ -74,6 +74,16 @@ class OllamaClient:
                 "prompt": prompt,
                 "stream": False,
                 "think": False,
+                "format": {
+                    "type": "object",
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": ["Cooperate", "Defect"]
+                        }
+                    },
+                    "required": ["action"]
+                },
                 "options": {
                     "temperature": temperature,
                     "top_p": top_p,
@@ -103,17 +113,18 @@ class OllamaClient:
             return ""
 
     def parse_llm_response(self, response_text: str) -> Optional[LLMResponse]:
-        if response_text:
-            resp_clean = re.sub(r'[^a-zA-Z\s]', '', response_text)
-            resp_clean = resp_clean.split()[0] if resp_clean.split() else ""
-            if resp_clean == "Cooperate":
-                return LLMResponse(action="Cooperate", reason="No reason provided")
-            elif resp_clean == "Defect":
-                return LLMResponse(action="Defect", reason="No reason provided")
-            else:
-                logger.warning(f"Unexpected response: {response_text}")
+        try:
+            data = json.loads(response_text)
 
-        return None
+            action = data["action"]
+            if action not in ["Cooperate", "Defect"]:
+                raise ValueError(f"Invalid action: {action}")
+
+            return LLMResponse(action=action, reason=data.get("reason", ""))
+
+        except Exception as e:
+            logger.error(f"Error parsing LLM response: {response_text}. Error: {e}")
+            return None
 
     def get_decision(
         self,
