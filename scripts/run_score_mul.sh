@@ -7,26 +7,15 @@ models=(
   "ministral-3:14b"
 )
 
-prompt_files=(
-  "prompts/x10.json"
-  "prompts/x100.json"
-)
-
 for model in "${models[@]}"; do
-  for prompt_file in "${prompt_files[@]}"; do
-    if [[ "$prompt_file" == *"x10.json" ]]; then
-      multiplier=10
-    elif [[ "$prompt_file" == *"x100.json" ]]; then
-      multiplier=100
-    else
-      echo "Unknown prompt file: $prompt_file"
-      exit 1
-    fi
+  python play.py \
+    --model "$model" \
+    --prompt_file "prompts/x10.json" \
+    --prompt_score_multiplier 10
 
-    python play.py \
-      --model "$model" \
-      --prompt_file "$prompt_file" \
-      --prompt_score_multiplier "$multiplier"
-  done
+  python play.py \
+    --model "$model" \
+    --prompt_file "prompts/x100.json" \
+    --prompt_score_multiplier 100
 done
 
