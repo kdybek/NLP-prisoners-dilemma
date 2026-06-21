@@ -7,6 +7,7 @@ import numpy as np
 import random
 
 from src.game_runner import GameRunner
+import src.globals as globals
 
 
 FLAGS = flags.FLAGS
@@ -18,6 +19,7 @@ flags.DEFINE_string("output_dir", "./results", "Directory to save results.")
 flags.DEFINE_string("prompt_file", "prompts.json", "Path to the prompts JSON file.")
 flags.DEFINE_integer("prompt_score_multiplier", 1, "Multiplier for the score in the prompt context.")
 flags.DEFINE_string("independent_payoffs", "no", "Whether to use independent payoffs (no/coop/defect).")
+flags.DEFINE_boolean("stay_go", False, "Whether use the stay/go prompt format instead of the default cooperate/defect format.")
 
 
 logging.basicConfig(
@@ -35,6 +37,9 @@ def main(_):
     prompt_file = FLAGS.prompt_file
     prompt_score_multiplier = FLAGS.prompt_score_multiplier
     independent_payoffs = FLAGS.independent_payoffs
+    if FLAGS.stay_go:
+        globals.COOP = "Stay"
+        globals.DEFECT = "Go"
 
     random.seed(42)
 

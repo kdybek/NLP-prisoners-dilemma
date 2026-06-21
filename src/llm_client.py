@@ -7,6 +7,7 @@ import logging
 from typing import Optional, Dict, Any
 from pydantic import BaseModel
 import re
+import src.globals as globals
 
 SEED = 0
 
@@ -81,7 +82,7 @@ class OllamaClient:
                     "properties": {
                         "action": {
                             "type": "string",
-                            "enum": ["Cooperate", "Defect"]
+                            "enum": [globals.COOP, globals.DEFECT]
                         }
                     },
                     "required": ["action"]
@@ -119,7 +120,7 @@ class OllamaClient:
             data = json.loads(response_text)
 
             action = data["action"]
-            if action not in ["Cooperate", "Defect"]:
+            if action not in [globals.COOP, globals.DEFECT]:
                 raise ValueError(f"Invalid action: {action}")
 
             return LLMResponse(action=action, reason=data.get("reason", ""))

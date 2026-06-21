@@ -11,6 +11,7 @@ from tqdm import tqdm
 from src.game import PrisonersDilemmaGame, GameTournament
 from src.llm_client import OllamaClient
 from src.player import LLMPlayer, Player, RandomPlayer
+import src.globals as globals
 
 logging.basicConfig(
     level=logging.INFO,
@@ -94,10 +95,10 @@ class GameRunner:
             b_cooperations} times"
         b_defect_text = f"{b_defections} time" if b_defections == 1 else f"{
             b_defections} times"
-        context += f"\nIn total, A chose \"Cooperate\" {
-            a_coop_text} and chose \"Defect\" {a_defect_text}, "
-        context += f"B chose \"Cooperate\" {
-            b_coop_text} and chose \"Defect\" {b_defect_text}.\n"
+        context += f"\nIn total, A chose \"{globals.COOP}\" {
+            a_coop_text} and chose \"{globals.DEFECT}\" {a_defect_text}, "
+        context += f"B chose \"{globals.COOP}\" {
+            b_coop_text} and chose \"{globals.DEFECT}\" {b_defect_text}.\n"
         payoff_a_total = game.state.player_a_score * prompt_score_multiplier
         payoff_b_total = game.state.player_b_score * prompt_score_multiplier
         payoff_a_total_text = f"{payoff_a_total} point" if payoff_a_total == 1 else f"{

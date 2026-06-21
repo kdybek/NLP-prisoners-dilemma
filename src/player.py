@@ -7,6 +7,7 @@ from typing import Optional, Dict, Any
 from dataclasses import dataclass
 import random
 from abc import ABC, abstractmethod
+import src.globals as globals
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ class Player(ABC):
         cooperations = sum(
             1
             for d in self.decision_history
-            if d["action"] == "Cooperate"
+            if d["action"] == globals.COOP
         )
 
         defections = len(self.decision_history) - cooperations
@@ -103,14 +104,7 @@ class LLMPlayer(Player):
                 "reason": response.reason,
             }
 
-        logger.warning(
-            f"Failed to get decision from {self.config.name}"
-        )
-
-        return {
-            "action": "Cooperate",
-            "reason": "Default action due to error",
-        }
+        raise ValueError("LLM did not return a valid response")
 
 
 class RandomPlayer(Player):
@@ -125,9 +119,9 @@ class RandomPlayer(Player):
     ) -> Dict[str, str]:
 
         action = (
-            "Defect"
+            globals.DEFECT
             if random.random() < self.defection_probability
-            else "Cooperate"
+            else globals.COOP
         )
 
         return {
