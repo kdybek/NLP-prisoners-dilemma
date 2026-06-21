@@ -7,8 +7,9 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class GameState:
+    independent_payoffs: str
+    max_rounds: int
     round_number: int = 1
-    max_rounds: int = 100
     player_a_score: int = 0
     player_b_score: int = 0
     player_a_cooperations: int = 0
@@ -19,19 +20,36 @@ class GameState:
         return self.history[-n:] if len(self.history) >= n else self.history
 
     def get_round_payoff(self, action_a: str, action_b: str) -> Tuple[int, int]:
-        payoffs = {
-            ("Defect", "Defect"): (1, 1),
-            ("Defect", "Cooperate"): (5, 0),
-            ("Cooperate", "Defect"): (0, 5),
-            ("Cooperate", "Cooperate"): (3, 3),
-        }
-        return payoffs.get((action_a, action_b), (0, 0))
+        if self.independent_payoffs == "no":
+            payoffs = {
+                ("Defect", "Defect"): (1, 1),
+                ("Defect", "Cooperate"): (5, 0),
+                ("Cooperate", "Defect"): (0, 5),
+                ("Cooperate", "Cooperate"): (3, 3),
+            }
+        elif self.independent_payoffs == "coop":
+            payoffs = {
+                ("Defect", "Defect"): (0, 0),
+                ("Defect", "Cooperate"): (0, 5),
+                ("Cooperate", "Defect"): (5, 0),
+                ("Cooperate", "Cooperate"): (5, 5),
+            }
+        elif self.independent_payoffs == "defect":
+            payoffs = {
+                ("Defect", "Defect"): (5, 5),
+                ("Defect", "Cooperate"): (5, 0),
+                ("Cooperate", "Defect"): (0, 5),
+                ("Cooperate", "Cooperate"): (0, 0),
+            }
+        else:
+            raise ValueError(f"Invalid independent_payoffs value: {self.independent_payoffs}")
+        return payoffs[(action_a, action_b)]
 
 
 class PrisonersDilemmaGame:
 
-    def __init__(self, max_rounds: int = 100):
-        self.state = GameState(max_rounds=max_rounds)
+    def __init__(self, max_rounds: int, independent_payoffs: str):
+        self.state = GameState(max_rounds=max_rounds, independent_payoffs=independent_payoffs)
         self.round_results: List[Dict] = []
 
     def play_round(self, action_a: str, action_b: str) -> Dict:

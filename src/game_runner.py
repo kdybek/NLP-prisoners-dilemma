@@ -115,10 +115,12 @@ class GameRunner:
         player_a: Player,
         player_b: Player,
         num_rounds: int,
+        independent_payoffs: str,
         verbose: bool = True,
-        prompt_score_multiplier: int = 1
+        prompt_score_multiplier: int = 1,
     ) -> Dict[str, Any]:
-        game = PrisonersDilemmaGame(max_rounds=num_rounds)
+        game = PrisonersDilemmaGame(max_rounds=num_rounds,
+                                    independent_payoffs=independent_payoffs)
 
         iterator = tqdm(range(num_rounds), desc="Playing game", disable=not verbose)
 
@@ -160,6 +162,7 @@ class GameRunner:
         matchups: list,
         num_games: int,
         num_rounds: int,
+        independent_payoffs: str,
         verbose: bool = True,
         prompt_score_multiplier: int = 1
     ) -> Dict[str, Any]:
@@ -187,8 +190,13 @@ class GameRunner:
                 player_a = self.create_player(player_a_config)
                 player_b = self.create_player(player_b_config)
 
-                result = self.play_game(
-                    player_a, player_b, num_rounds=num_rounds, verbose=verbose, prompt_score_multiplier=prompt_score_multiplier)
+                result = self.play_game(player_a,
+                                        player_b,
+                                        num_rounds=num_rounds,
+                                        independent_payoffs=independent_payoffs,
+                                        verbose=verbose,
+                                        prompt_score_multiplier=prompt_score_multiplier
+                                        )
                 matchup_results["games"].append(result)
 
             # Calculate matchup stats

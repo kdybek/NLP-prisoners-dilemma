@@ -17,6 +17,7 @@ flags.DEFINE_integer("games", 30, "Number of games against random opponents of d
 flags.DEFINE_string("output_dir", "./results", "Directory to save results.")
 flags.DEFINE_string("prompt_file", "prompts.json", "Path to the prompts JSON file.")
 flags.DEFINE_integer("prompt_score_multiplier", 1, "Multiplier for the score in the prompt context.")
+flags.DEFINE_string("independent_payoffs", "no", "Whether to use independent payoffs (no/coop/defect).")
 
 
 logging.basicConfig(
@@ -33,6 +34,7 @@ def main(_):
     output_dir = FLAGS.output_dir
     prompt_file = FLAGS.prompt_file
     prompt_score_multiplier = FLAGS.prompt_score_multiplier
+    independent_payoffs = FLAGS.independent_payoffs
 
     random.seed(42)
 
@@ -77,6 +79,7 @@ def main(_):
         matchups=matchups,
         num_games=1,
         num_rounds=num_rounds,
+        independent_payoffs=independent_payoffs,
         verbose=True,
         prompt_score_multiplier=prompt_score_multiplier
     )
