@@ -11,7 +11,7 @@ from src.game_runner import GameRunner
 
 FLAGS = flags.FLAGS
 OLLAMA_BASE_URL = "http://localhost:11434"
-flags.DEFINE_string("model", "llama2", "The model to use for the LLM player.")
+flags.DEFINE_string("model", "llama2", "The model to use for the LLM player or 'random' for random baseline.")
 flags.DEFINE_integer("rounds", 100, "Number of rounds per game.")
 flags.DEFINE_integer("games", 30, "Number of games against random opponents of differing hostility.")
 flags.DEFINE_string("output_dir", "./results", "Directory to save results.")
@@ -51,10 +51,16 @@ def main(_):
         logger.error(f"  ollama pull {model}")
         return
 
-    llm_config = {
+    if model == "random":
+        llm_config = {
+            "type": "random",
+            "defection_probability": 0.5
+        }
+    else:
+        llm_config = {
             "type": "llm",
             "temperature": 0.7
-    }
+        }
 
     random_players = [
         {

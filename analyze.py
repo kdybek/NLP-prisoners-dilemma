@@ -38,7 +38,9 @@ def analyze_results(input_file):
                     'forgiving_factor': forgiving_factor,
                     'retaliatory_factor': retaliatory_factor,
                     'troublemaking_factor': troublemaking_factor,
-                    'emulative_factor': emulative_factor
+                    'emulative_factor': emulative_factor,
+                    'player_a_total_score': game['player_a_total_score'],
+                    'player_b_total_score': game['player_b_total_score'],
                 })
 
         return records

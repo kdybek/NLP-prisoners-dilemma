@@ -39,6 +39,8 @@ class OllamaClient:
         return False
 
     def check_connection(self) -> bool:
+        if self.model == "random":
+            return True  # No need to check connection for random model
         try:
             response = requests.get(f"{self.base_url}/api/tags", timeout=5)
             if response.status_code == 200:
