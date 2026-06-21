@@ -19,8 +19,8 @@ def analyze_results(input_file):
         for i, matchup in enumerate(matchups):
             random_player_defection_prob = matchup['player_b']['defection_probability']
             for j, game in enumerate(matchup['games']):
-                history = [(Action.COOPERATE if move['action_a'] == 'Cooperate' else Action.DEFECT,
-                            Action.COOPERATE if move['action_b'] == 'Cooperate' else Action.DEFECT) for move in game['round_details']]
+                history = [(Action.COOPERATE if move['action_a'] in ['Cooperate', 'Stay'] else Action.DEFECT,
+                            Action.COOPERATE if move['action_b'] in ['Cooperate', 'Stay'] else Action.DEFECT) for move in game['round_details']]
 
                 nice_factor = metrics.player1_nice_factor(history)
                 forgiving_factor = metrics.player1_forgiving_factor(history)

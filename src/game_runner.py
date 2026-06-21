@@ -155,8 +155,6 @@ class GameRunner:
 
         summary = game.get_game_summary()
         summary["round_details"] = game.round_results
-        summary["round_details"]["action_a"] = "Cooperate" if summary["round_details"]["action_a"] == globals.COOP else "Defect"
-        summary["round_details"]["action_b"] = "Cooperate" if summary["round_details"]["action_b"] == globals.COOP else "Defect"
 
         return summary
 
