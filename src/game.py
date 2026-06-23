@@ -1,14 +1,16 @@
 from typing import Tuple, List, Dict, Optional
 from dataclasses import dataclass, field
 import logging
+import src.globals as globals
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class GameState:
+    independent_payoffs: str
+    max_rounds: int
     round_number: int = 1
-    max_rounds: int = 100
     player_a_score: int = 0
     player_b_score: int = 0
     player_a_cooperations: int = 0
@@ -19,35 +21,52 @@ class GameState:
         return self.history[-n:] if len(self.history) >= n else self.history
 
     def get_round_payoff(self, action_a: str, action_b: str) -> Tuple[int, int]:
-        payoffs = {
-            ("Defect", "Defect"): (1, 1),
-            ("Defect", "Cooperate"): (5, 0),
-            ("Cooperate", "Defect"): (0, 5),
-            ("Cooperate", "Cooperate"): (3, 3),
-        }
-        return payoffs.get((action_a, action_b), (0, 0))
+        if self.independent_payoffs == "no":
+            payoffs = {
+                (globals.DEFECT, globals.DEFECT): (1, 1),
+                (globals.DEFECT, globals.COOP): (5, 0),
+                (globals.COOP, globals.DEFECT): (0, 5),
+                (globals.COOP, globals.COOP): (3, 3),
+            }
+        elif self.independent_payoffs == "coop":
+            payoffs = {
+                (globals.DEFECT, globals.DEFECT): (0, 0),
+                (globals.DEFECT, globals.COOP): (0, 5),
+                (globals.COOP, globals.DEFECT): (5, 0),
+                (globals.COOP, globals.COOP): (5, 5),
+            }
+        elif self.independent_payoffs == "defect":
+            payoffs = {
+                (globals.DEFECT, globals.DEFECT): (5, 5),
+                (globals.DEFECT, globals.COOP): (5, 0),
+                (globals.COOP, globals.DEFECT): (0, 5),
+                (globals.COOP, globals.COOP): (0, 0),
+            }
+        else:
+            raise ValueError(f"Invalid independent_payoffs value: {self.independent_payoffs}")
+        return payoffs[(action_a, action_b)]
 
 
 class PrisonersDilemmaGame:
 
-    def __init__(self, max_rounds: int = 100):
-        self.state = GameState(max_rounds=max_rounds)
+    def __init__(self, max_rounds: int, independent_payoffs: str):
+        self.state = GameState(max_rounds=max_rounds, independent_payoffs=independent_payoffs)
         self.round_results: List[Dict] = []
 
     def play_round(self, action_a: str, action_b: str) -> Dict:
-        valid_actions = {"Cooperate", "Defect"}
+        valid_actions = {globals.COOP, globals.DEFECT}
         if action_a not in valid_actions or action_b not in valid_actions:
             logger.error(f"Invalid action: A={action_a}, B={action_b}")
-            action_a, action_b = "Cooperate", "Cooperate"
+            raise ValueError(f"Invalid action: A={action_a}, B={action_b}")
 
         payoff_a, payoff_b = self.state.get_round_payoff(action_a, action_b)
 
         self.state.player_a_score += payoff_a
         self.state.player_b_score += payoff_b
 
-        if action_a == "Cooperate":
+        if action_a == globals.COOP:
             self.state.player_a_cooperations += 1
-        if action_b == "Cooperate":
+        if action_b == globals.COOP:
             self.state.player_b_cooperations += 1
 
         self.state.history.append((action_a, action_b))

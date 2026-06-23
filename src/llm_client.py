@@ -6,6 +6,10 @@ import json
 import logging
 from typing import Optional, Dict, Any
 from pydantic import BaseModel
+import re
+import src.globals as globals
+
+SEED = 0
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -17,7 +21,7 @@ class LLMResponse(BaseModel):
 
 
 class OllamaClient:
-    def __init__(self, base_url: str = "http://localhost:11434", model: str = "llama2"):
+    def __init__(self, base_url: str, model: str):
         self.base_url = base_url
         self.model = model
         self.api_generate_url = f"{base_url}/api/generate"
@@ -36,6 +40,8 @@ class OllamaClient:
         return False
 
     def check_connection(self) -> bool:
+        if self.model == "random":
+            return True  # No need to check connection for random model
         try:
             response = requests.get(f"{self.base_url}/api/tags", timeout=5)
             if response.status_code == 200:
@@ -57,20 +63,38 @@ class OllamaClient:
     def generate_response(
         self,
         prompt: str,
+        system_prompt: str,
         temperature: float = 0.7,
         top_p: float = 0.9,
-        max_tokens: int = 500,
+        max_tokens: int = 50,
     ) -> str:
+        global SEED
 
         try:
             payload = {
                 "model": self.model,
+                "system": system_prompt,
                 "prompt": prompt,
-                "temperature": temperature,
-                "top_p": top_p,
-                "num_predict": max_tokens,
                 "stream": False,
+                "think": False,
+                "format": {
+                    "type": "object",
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": [globals.COOP, globals.DEFECT]
+                        }
+                    },
+                    "required": ["action"]
+                },
+                "options": {
+                    "temperature": temperature,
+                    "top_p": top_p,
+                    "num_predict": max_tokens,
+                    "seed": SEED,
+                }
             }
+            SEED += 1
 
             response = requests.post(self.api_generate_url, json=payload, timeout=60)
 
@@ -93,42 +117,40 @@ class OllamaClient:
 
     def parse_llm_response(self, response_text: str) -> Optional[LLMResponse]:
         try:
-            # Try to find JSON in the response
-            start_idx = response_text.find("{")
-            end_idx = response_text.rfind("}") + 1
+            data = json.loads(response_text)
 
-            if start_idx != -1 and end_idx > start_idx:
-                json_str = response_text[start_idx:end_idx]
-                parsed = json.loads(json_str)
+            action = data["action"]
+            if action not in [globals.COOP, globals.DEFECT]:
+                raise ValueError(f"Invalid action: {action}")
 
-                if "action" in parsed and "reason" in parsed:
-                    return LLMResponse(
-                        action=parsed["action"].strip(),
-                        reason=parsed["reason"].strip()
-                    )
-        except json.JSONDecodeError:
-            logger.warning(f"Failed to parse JSON from response")
+            return LLMResponse(action=action, reason=data.get("reason", ""))
 
-        return None
+        except Exception as e:
+            logger.error(f"Error parsing LLM response: {response_text}. Error: {e}")
+            return None
 
     def get_decision(
         self,
-        full_prompt: str,
-        persona: str = "baseline",
-        temperature: float = 0.7,
+        prompt: str,
+        system_prompt: str,
+        temperature: float,
     ) -> Optional[LLMResponse]:
-        logger.info(f"Requesting decision from {self.model} with {persona} persona")
+        MAX_RETRIES = 3
+        for attempt in range(MAX_RETRIES):
+            logger.info(f"Requesting decision from {self.model}")
 
-        response_text = self.generate_response(
-            prompt=full_prompt,
-            temperature=temperature,
-            max_tokens=500
-        )
+            response_text = self.generate_response(
+                prompt=prompt,
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_tokens=50,
+            )
+            parsed = self.parse_llm_response(response_text)
+            if parsed is not None:
+                break
 
-        parsed = self.parse_llm_response(response_text)
-
-        if not parsed:
-            logger.error(f"Failed to parse response: {response_text}")
-            return LLMResponse(action="Cooperate", reason="Unable to parse response")
+        if parsed is None:
+            logger.error("Your model seems to be too stupid. Failed to get a valid response after multiple attempts.")
+            raise Exception("Failed to get a valid response from the model after multiple attempts.")
 
         return parsed
