@@ -12,7 +12,7 @@
 
 `plots/` - Directory with plots.
 
-`prompts/` - Directory with prompts for all the experiments.
+`prompts/` - Directory with prompts for the experiments.
 
 `results/` - Directory with game histories from the experiments.
 
