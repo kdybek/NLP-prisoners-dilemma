@@ -1,63 +1,21 @@
-# LLM Prisoner's Dilemma Assessment
+# Should I Cooperate or Should I Defect? Investigating the Influence of Prompt Formulation on Large Language Model Behavior in the Iterated Prisoner’s Dilemma
 
-Assess how Large Language Models (LLMs) play the iterated prisoner's dilemma game with different personas.
+## Most important files and directories
 
-## Quick Start
+`play.py` - Script for running the experiments.
 
-1. **Install Ollama** (https://ollama.ai) and pull a model:
-   ```bash
-   ollama pull llama2
-   ollama serve
-   ```
+`analyze.py` - Script for analyzing the resulting game histories.
 
-2. **Setup Python** (in new terminal):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
+`plots.ipynb` - Notebook for creating plots.
 
-3. **Run Assessment**:
-   ```bash
-   python main.py
-   ```
+`scripts/` - Directory with bash scripts for running the experiments.
 
-## What This Does
+`plots/` - Directory with plots.
 
-- Creates LLM-based players with different personas
-- Runs multiple games of iterated prisoner's dilemma
-- Tracks cooperation rates, scores, and strategy outcomes
-- Analyzes how LLMs respond to different game scenarios
-- Generates detailed tournament results
+`prompts/` - Directory with prompts for all the experiments.
 
-## Key Components
-
-| File | Purpose |
-|------|---------|
-| `src/llm_client.py` | Ollama API communication |
-| `src/game.py` | Game logic and state management |
-| `src/player.py` | LLM player implementation |
-| `src/game_runner.py` | Tournament orchestration |
-| `main.py` | Entry point |
-| `prompts.json` | Game rules and personas |
-
-## Configuration
-
-Edit `.env` to customize:
-- `DEFAULT_MODEL`: Which LLM to use
-- `NUM_ROUNDS`: Rounds per game (default: 100)
-- `NUM_GAMES`: Games per matchup (default: 5)
-
-## Results
-
-Tournament results saved to `results/` folder as JSON with:
-- Round-by-round decisions
-- Score breakdowns
-- Cooperation statistics
-- Win/loss records
-
+`results/` - Directory with game histories from the experiments.
 
 ## See Also
 
-- [Setup Instructions](setup_instructions.md)
 - [Ollama Documentation](https://ollama.ai)
